@@ -1,91 +1,104 @@
 # ⚡ WarpSync (P2_Warpsync)
 
-> **Instant Local Peer-to-Peer File Sharing Application (ShareIt / Quick Share Replica)**
-> 
-> WarpSync enables seamless, lightning-fast file and text transfer back and forth between any devices on your local network (laptop-mobile, mobile-mobile, laptop-laptop, Linux, Windows, macOS, Android, iOS) **without requiring internet access or app installation on mobile devices**.
+> **Instant Local Peer-to-Peer File Sharing Application**
 
 ---
 
-## ✨ Features
+## 📌 What is WarpSync?
 
-- **🌐 Zero-Install Mobile Access**: Open WarpSync on any smartphone or tablet by simply scanning the automatically generated **QR Code** in your terminal or web browser.
-- **⚡ High-Speed Local Transfer**: Operates strictly over Wi-Fi / Local Area Network (LAN) / Direct Mobile Hotspot. No cloud servers, no bandwidth throttling, no internet reliance.
-- **📁 Drag & Drop Interface**: Ultra-sleek glassmorphism dark-mode web application featuring real-time upload progress bars and 1-click downloads.
-- **📋 Live Clipboard & Text Share**: Instantly copy-paste text snippets, URLs, or authorization tokens between devices.
-- **🔄 Live WebSockets & P2P**: Real-time peer connection status notifications and direct browser-to-browser WebRTC fallback.
-- **🐳 Sandboxed & Containerized**: Ready for Docker deployment with `docker-compose.yml` or native Linux background system service (`systemd`).
+**WarpSync** is a lightweight, high-speed local file and clipboard sharing tool (a replica of ShareIt, LocalSend, or Quick Share). It lets you transfer files, documents, photos, videos, and text snippets back and forth between devices without relying on cloud storage or an internet connection.
 
 ---
 
-## 🚀 Quick Start (1-Click Run)
+## 🎯 For What Purpose?
 
-### Method 1: Local Terminal Run (Linux / macOS / Windows)
+1. **Zero-Internet File Transfer**: Share large files between devices placed on the same table when internet access is unavailable, slow, or restricted.
+2. **Zero-Install Convenience**: No app installation is required on recipient/client devices (mobile phones, tablets, or secondary laptops). Any browser on the local network can connect instantly.
+3. **Cross-Platform Compatibility**: Connects Linux, Windows, macOS, Android, and iOS seamlessly.
+4. **Privacy & Security**: Files stay entirely within your local Wi-Fi or hotspot network; nothing is uploaded to external servers.
+
+---
+
+## ⚡ How to Use WarpSync
+
+### 🖥️ Server Side Setup (Your Primary Laptop / PC)
+
+#### **Option 1: Simple 1-Click Launch (Terminal)**
+1. Open your terminal and navigate to the project directory:
+   ```bash
+   cd /home/dev/SE/P2_Warpsync
+   ```
+2. Run the launcher script:
+   ```bash
+   ./run.sh
+   ```
+   *(Or run `python3 start.py`)*
+
+3. **What happens next:**
+   - A virtual environment `.venv` is automatically prepared.
+   - Dependencies are verified.
+   - An **ASCII QR Code** and your **Local Access URL** (e.g. `http://192.168.1.50:8000`) will print directly in your terminal window, and your web browser will open automatically.
+
+---
+
+#### **Option 2: Docker Launch (Sandboxed / Containerized)**
+If you prefer running WarpSync inside a Docker container:
 ```bash
-# Navigate to WarpSync directory
 cd /home/dev/SE/P2_Warpsync
-
-# Run launcher (automatically creates .venv and installs dependencies)
-./run.sh
-# or
-python3 start.py
-```
-
-### Method 2: Docker Container (Sandboxed Execution)
-```bash
-# Launch WarpSync using Docker Compose
 docker compose up -d
-
-# View server logs & terminal QR code
+```
+To view the terminal QR code and connection logs:
+```bash
 docker compose logs -f
 ```
 
 ---
 
-## 📱 How to Transfer Files to Mobile
+### 📱 Client Side Setup (Mobile Phones, Tablets, or Secondary Laptops)
 
-1. Run `python3 start.py` or `./run.sh` on your laptop.
-2. The terminal will output an ASCII QR code along with your local access URL (e.g. `http://192.168.1.50:8000`).
-3. Connect your mobile phone to the **same Wi-Fi or laptop hotspot**.
-4. Scan the QR code with your phone camera -> The WarpSync web app opens instantly!
-5. Select or drag files on either device to transfer them instantly across the local network.
+**No installation required!**
+
+#### **Step 1: Connect to the Same Network**
+Ensure your mobile device or client laptop is connected to the **same Wi-Fi network** or **mobile hotspot** as the server laptop.
+
+#### **Step 2: Open WarpSync on Client**
+- **Mobile Phones & Tablets**: Scan the QR Code displayed on the server's terminal screen or web page using your phone camera.
+- **Secondary Laptops**: Open your browser and type the Local URL shown on the server screen (e.g. `http://192.168.1.50:8000`).
+
+#### **Step 3: Transfer Files & Text**
+- **To Send Files from Client $\rightarrow$ Server**:
+  - Tap **Browse Files** or drag-and-drop any file into the upload dropzone.
+  - Watch the live progress bar as it transfers directly to the server's `downloads/` folder.
+- **To Download Files from Server $\rightarrow$ Client**:
+  - Scroll down to **Received Files Library** and tap **Download** next to any file.
+- **To Share Text / Links**:
+  - Type or paste any message into **Quick Text & Link Share** and tap **Share Text**. It instantly appears on all connected screens.
 
 ---
 
-## 📂 Project Architecture
+## 💡 Summary Workflow
 
 ```
-P2_Warpsync/
-├── app/
-│   ├── main.py          # FastAPI REST endpoints, WebSockets, HTML routing
-│   ├── network.py       # Local IP autodetect & QR code generation (ASCII/PNG)
-│   ├── storage.py       # Streaming chunked file storage & safety checks
-│   ├── templates/
-│   │   └── index.html   # Responsive HTML UI with QR reader & progress bar
-│   └── static/
-│       ├── css/style.css# Modern Glassmorphism Design System
-│       └── js/app.js    # WebSocket client, Drag-n-drop handler, Clipboard manager
-├── downloads/           # Default local storage for incoming files
-├── tests/
-│   └── test_server.py   # Pytest suite for endpoints & uploads
-├── Dockerfile           # Container definition
-├── docker-compose.yml   # Multi-device host networking compose setup
-├── P2_Warpsync.service  # Systemd daemon configuration
-├── requirements.txt     # Python dependencies
-├── run.sh               # Executable bash launcher
-└── start.py             # One-click Python launcher script
+[ Laptop Server ] <==== (Local Wi-Fi / Hotspot) ====> [ Phone / Client Browser ]
+  - Runs ./run.sh                                        - Scans QR Code
+  - Shows QR Code                                        - Sends / Receives Files
+  - Stores in downloads/                                 - Zero App Install Needed
 ```
 
 ---
 
-## 🛠️ Running Unit Tests
+## 🛠️ Testing & Troubleshooting
 
-```bash
-source .venv/bin/activate
-PYTHONPATH=. pytest -v
-```
+- **Check server status with Pytest**:
+  ```bash
+  source .venv/bin/activate
+  PYTHONPATH=. pytest -v
+  ```
+- **Connection Issue?**
+  - Verify both devices are on the exact same Wi-Fi router or Hotspot.
+  - Make sure firewall permits port `8000`.
 
 ---
 
-## 🛡️ License
-
-MIT License - Developed as part of the `SE` Multi-Repository Workspace.
+## 📄 License
+MIT License • Part of the `SE` Workspace.
