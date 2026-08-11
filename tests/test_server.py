@@ -10,7 +10,8 @@ def test_get_index():
     response = client.get("/")
     assert response.status_code == 200
     assert "WarpSync" in response.text
-    assert "Connect Device" in response.text
+    assert "Connect Phone / Device" in response.text
+
 
 def test_get_server_info():
     response = client.get("/api/info")
