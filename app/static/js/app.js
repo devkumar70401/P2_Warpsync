@@ -1,7 +1,24 @@
-// WarpSync 2.0 State-of-the-Art P2P Sharing Logic
+// WarpSync 2.0 State-of-the-Art P2P Sharing Logic with Multi-Theme Engine
 
 let ws;
 let pingInterval;
+
+// Theme Switcher Engine
+function changeTheme(themeName) {
+    if (themeName === 'midnight') {
+        document.documentElement.removeAttribute('data-theme');
+    } else {
+        document.documentElement.setAttribute('data-theme', themeName);
+    }
+    localStorage.setItem('warpsync_theme', themeName);
+    const selector = document.getElementById('theme-selector');
+    if (selector) selector.value = themeName;
+}
+
+function initTheme() {
+    const savedTheme = localStorage.getItem('warpsync_theme') || 'midnight';
+    changeTheme(savedTheme);
+}
 
 function initWebSocket() {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -294,6 +311,7 @@ function escapeHtml(text) {
 
 // Initialize on DOM load
 document.addEventListener("DOMContentLoaded", () => {
+    initTheme();
     initWebSocket();
     loadFilesList();
     loadClipboards();

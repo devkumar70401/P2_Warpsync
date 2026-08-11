@@ -1,5 +1,6 @@
-/* WarpSync 2.0 Modern Dark Mode & Glassmorphism Design System */
+/* WarpSync 2.0 Dynamic Multi-Theme System */
 :root {
+    /* Default Theme: Midnight Cyan */
     --bg-dark: #0b0f19;
     --card-bg: rgba(18, 26, 44, 0.75);
     --border-color: rgba(255, 255, 255, 0.12);
@@ -16,6 +17,45 @@
     --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Theme 2: Cyberpunk Neon */
+[data-theme="cyberpunk"] {
+    --bg-dark: #090014;
+    --card-bg: rgba(26, 5, 48, 0.8);
+    --border-color: rgba(255, 0, 127, 0.25);
+    --primary: #ff007f;
+    --primary-glow: rgba(255, 0, 127, 0.4);
+    --secondary: #7f00ff;
+    --accent: #ffe600;
+    --text-main: #ffffff;
+    --text-muted: #d8b4fe;
+}
+
+/* Theme 3: Nordic Slate (Light Mode) */
+[data-theme="nordic"] {
+    --bg-dark: #f1f5f9;
+    --card-bg: rgba(255, 255, 255, 0.9);
+    --border-color: rgba(148, 163, 184, 0.3);
+    --primary: #2563eb;
+    --primary-glow: rgba(37, 99, 235, 0.2);
+    --secondary: #3b82f6;
+    --accent: #4f46e5;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+}
+
+/* Theme 4: Matrix Emerald */
+[data-theme="matrix"] {
+    --bg-dark: #020d08;
+    --card-bg: rgba(6, 31, 18, 0.85);
+    --border-color: rgba(16, 185, 129, 0.3);
+    --primary: #10b981;
+    --primary-glow: rgba(16, 185, 129, 0.4);
+    --secondary: #059669;
+    --accent: #34d399;
+    --text-main: #ecfdf5;
+    --text-muted: #6ee7b7;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -30,8 +70,9 @@ body {
     display: flex;
     flex-direction: column;
     background-image: 
-        radial-gradient(circle at 15% 15%, rgba(0, 242, 254, 0.09) 0%, transparent 45%),
+        radial-gradient(circle at 15% 15%, var(--primary-glow) 0%, transparent 45%),
         radial-gradient(circle at 85% 85%, rgba(127, 0, 255, 0.09) 0%, transparent 45%);
+    transition: var(--transition);
 }
 
 .navbar {
@@ -71,6 +112,29 @@ body {
 
 .brand-icon {
     font-size: 1.75rem;
+}
+
+.nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.theme-select {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    outline: none;
+    cursor: pointer;
+}
+
+.theme-select option {
+    background: #0b0f19;
+    color: #fff;
 }
 
 .status-badge {
@@ -133,7 +197,7 @@ body {
 }
 
 .dropzone {
-    border: 2px dashed rgba(0, 242, 254, 0.4);
+    border: 2px dashed var(--primary);
     border-radius: var(--radius-md);
     padding: 3rem 1.5rem;
     text-align: center;
@@ -144,7 +208,7 @@ body {
 
 .dropzone:hover, .dropzone.dragover {
     border-color: var(--primary);
-    background: rgba(0, 242, 254, 0.08);
+    background: var(--primary-glow);
     box-shadow: 0 0 25px var(--primary-glow);
 }
 
@@ -166,12 +230,12 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
+    box-shadow: 0 4px 15px var(--primary-glow);
 }
 
 .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(79, 172, 254, 0.5);
+    box-shadow: 0 6px 20px var(--primary-glow);
 }
 
 .btn-secondary {
@@ -248,9 +312,9 @@ body {
 }
 
 .count-badge {
-    background: rgba(0, 242, 254, 0.15);
+    background: var(--primary-glow);
     color: var(--primary);
-    border: 1px solid rgba(0, 242, 254, 0.3);
+    border: 1px solid var(--border-color);
     padding: 0.1rem 0.5rem;
     border-radius: 12px;
     font-size: 0.75rem;
@@ -276,7 +340,7 @@ body {
 
 .file-item:hover {
     background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(0, 242, 254, 0.3);
+    border-color: var(--primary);
 }
 
 .file-info {
@@ -317,7 +381,7 @@ body {
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     padding: 0.75rem 1rem;
-    color: #fff;
+    color: var(--text-main);
     outline: none;
 }
 
@@ -369,12 +433,12 @@ body {
     position: fixed;
     bottom: 24px;
     right: 24px;
-    background: linear-gradient(135deg, #00f2fe, #4facfe);
+    background: linear-gradient(135deg, var(--secondary), var(--primary));
     color: #000;
     font-weight: 700;
     padding: 0.75rem 1.25rem;
     border-radius: 10px;
-    box-shadow: 0 8px 25px rgba(0, 242, 254, 0.4);
+    box-shadow: 0 8px 25px var(--primary-glow);
     z-index: 9999;
     animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
