@@ -1,6 +1,7 @@
-// WarpSync Frontend Logic
+// WarpSync 2.0 State-of-the-Art P2P Sharing Logic
 
 let ws;
+let pingInterval;
 
 function initWebSocket() {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -9,7 +10,17 @@ function initWebSocket() {
     ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
-        console.log("⚡ Connected to WarpSync WebSocket stream");
+        console.log("⚡ Connected to WarpSync WebSocket Stream");
+        const statusDot = document.getElementById("status-dot");
+        if (statusDot) statusDot.style.background = "#10b981";
+        
+        // Heartbeat ping
+        clearInterval(pingInterval);
+        pingInterval = setInterval(() => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: "ping" }));
+            }
+        }, 10000);
     };
 
     ws.onmessage = (event) => {
@@ -17,24 +28,31 @@ function initWebSocket() {
         if (data.type === "peer_count") {
             const peerStatus = document.getElementById("peer-status");
             if (peerStatus) {
-                peerStatus.textContent = `Connected (${data.count} Device${data.count > 1 ? 's' : ''})`;
+                peerStatus.textContent = `${data.count} Connected Device${data.count > 1 ? 's' : ''}`;
             }
         } else if (data.type === "file_received") {
             loadFilesList();
-            showNotification(`📥 File received: ${data.file.filename}`);
+            showNotification(`📥 Received file: ${data.file.filename}`);
+        } else if (data.type === "file_deleted") {
+            loadFilesList();
+            showNotification(`🗑️ File deleted: ${data.filename}`);
         } else if (data.type === "clipboard_added") {
             loadClipboards();
-            showNotification(`📋 New text shared`);
+            showNotification(`📋 New text snippet shared`);
+        } else if (data.type === "clipboard_deleted" || data.type === "clipboard_cleared") {
+            loadClipboards();
         }
     };
 
     ws.onclose = () => {
         console.log("WebSocket disconnected, reconnecting in 3s...");
+        const statusDot = document.getElementById("status-dot");
+        if (statusDot) statusDot.style.background = "#ef4444";
         setTimeout(initWebSocket, 3000);
     };
 }
 
-// Drag & Drop Setup
+// Setup Drag & Drop Upload Handlers
 const dropzone = document.getElementById("dropzone");
 const fileInput = document.getElementById("file-input");
 
@@ -88,18 +106,18 @@ function uploadFiles(files) {
         if (e.lengthComputable) {
             const percent = Math.round((e.loaded / e.total) * 100);
             progressBar.style.width = percent + "%";
-            uploadStatus.textContent = `Uploading: ${percent}%`;
+            uploadStatus.textContent = `⚡ Uploading: ${percent}%`;
         }
     };
 
     xhr.onload = () => {
         if (xhr.status === 200) {
-            uploadStatus.textContent = "✅ Upload completed successfully!";
+            uploadStatus.textContent = "✅ Upload complete!";
             setTimeout(() => {
                 progressContainer.style.display = "none";
                 uploadStatus.style.display = "none";
                 progressBar.style.width = "0%";
-            }, 3000);
+            }, 2500);
             loadFilesList();
         } else {
             uploadStatus.textContent = "❌ Upload failed!";
@@ -114,27 +132,54 @@ function loadFilesList() {
         .then(res => res.json())
         .then(files => {
             const fileListEl = document.getElementById("file-list");
+            const fileCountBadge = document.getElementById("file-count-badge");
+            
+            if (fileCountBadge) fileCountBadge.textContent = files.length;
+
             if (!files || files.length === 0) {
-                fileListEl.innerHTML = `<p style="color: var(--text-muted); text-align: center; padding: 2rem;">No files uploaded yet. Drag & drop files above to start sharing!</p>`;
+                fileListEl.innerHTML = `
+                    <div style="text-align: center; padding: 2.5rem 1rem; color: var(--text-muted);">
+                        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">📁</div>
+                        <p>No files shared yet. Drag & drop files above to transfer instantly!</p>
+                    </div>`;
                 return;
             }
 
-            fileListEl.innerHTML = files.map(file => `
+            fileListEl.innerHTML = files.map(file => {
+                const icon = getCategoryIcon(file.category);
+                return `
                 <div class="file-item">
                     <div class="file-info">
-                        <span class="file-icon">📄</span>
+                        <span class="file-icon">${icon}</span>
                         <div>
                             <div class="file-name">${escapeHtml(file.filename)}</div>
                             <div class="file-meta">${file.formatted_size} • ${file.modified_str}</div>
                         </div>
                     </div>
-                    <a href="/api/download/${encodeURIComponent(file.filename)}" class="btn-primary" style="padding: 0.4rem 1rem; font-size: 0.85rem; text-decoration: none;">
-                        📥 Download
-                    </a>
+                    <div class="file-actions">
+                        <a href="/api/download/${encodeURIComponent(file.filename)}" class="btn-primary" style="padding: 0.4rem 0.9rem; font-size: 0.8rem; text-decoration: none;">
+                            📥 Download
+                        </a>
+                        <button class="btn-danger" style="padding: 0.4rem 0.7rem; font-size: 0.8rem;" onclick="deleteFile('${escapeHtml(file.filename)}')">
+                            🗑️
+                        </button>
+                    </div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
         })
         .catch(err => console.error("Error loading files:", err));
+}
+
+function deleteFile(filename) {
+    if (!confirm(`Are you sure you want to delete "${filename}"?`)) return;
+    
+    fetch(`/api/files/${encodeURIComponent(filename)}`, { method: "DELETE" })
+        .then(res => res.json())
+        .then(data => {
+            loadFilesList();
+            showNotification(`🗑️ Deleted ${filename}`);
+        });
 }
 
 function sendClipboard() {
@@ -153,6 +198,7 @@ function sendClipboard() {
     .then(data => {
         input.value = "";
         loadClipboards();
+        showNotification("🚀 Text snippet shared across devices!");
     });
 }
 
@@ -161,44 +207,75 @@ function loadClipboards() {
         .then(res => res.json())
         .then(items => {
             const clipListEl = document.getElementById("clip-list");
+            const clipCountBadge = document.getElementById("clip-count-badge");
+            
+            if (clipCountBadge) clipCountBadge.textContent = items.length;
+
             if (!items || items.length === 0) {
-                clipListEl.innerHTML = `<p style="color: var(--text-muted); font-size: 0.85rem;">No text snippets shared yet.</p>`;
+                clipListEl.innerHTML = `<p style="color: var(--text-muted); font-size: 0.85rem; padding: 1rem 0;">No text snippets shared yet.</p>`;
                 return;
             }
 
             clipListEl.innerHTML = items.map(item => `
                 <div class="clip-item">
-                    <div>
-                        <span style="font-size: 0.9rem; font-weight: 500;">${escapeHtml(item.content)}</span>
-                        <span style="font-size: 0.75rem; color: var(--text-muted); margin-left: 0.5rem;">(${item.timestamp})</span>
+                    <div style="flex: 1; min-width: 0; padding-right: 1rem;">
+                        <div class="clip-content">${escapeHtml(item.content)}</div>
+                        <div class="clip-time">Shared at ${item.timestamp}</div>
                     </div>
-                    <button class="btn-primary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;" onclick="navigator.clipboard.writeText('${escapeHtml(item.content)}')">
-                        📋 Copy
-                    </button>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <button class="btn-primary" style="padding: 0.35rem 0.75rem; font-size: 0.75rem;" onclick="copyText('${escapeHtml(item.content)}')">
+                            📋 Copy
+                        </button>
+                        <button class="btn-danger" style="padding: 0.35rem 0.6rem; font-size: 0.75rem;" onclick="deleteClipboard(${item.id})">
+                            🗑️
+                        </button>
+                    </div>
                 </div>
             `).join('');
         });
 }
 
+function deleteClipboard(id) {
+    fetch(`/api/clipboard/${id}`, { method: "DELETE" })
+        .then(res => res.json())
+        .then(data => loadClipboards());
+}
+
+function clearAllClipboard() {
+    if (!confirm("Clear all shared text snippets?")) return;
+    fetch("/api/clipboard", { method: "DELETE" })
+        .then(res => res.json())
+        .then(data => loadClipboards());
+}
+
+function copyText(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        showNotification("📋 Copied to clipboard!");
+    });
+}
+
 function copyAccessUrl() {
     const urlText = document.getElementById("url-text").textContent;
     navigator.clipboard.writeText(urlText).then(() => {
-        showNotification("📋 Copied Local URL to clipboard!");
+        showNotification("🔗 Copied Local Network URL!");
     });
+}
+
+function getCategoryIcon(cat) {
+    switch (cat) {
+        case 'image': return '🖼️';
+        case 'video': return '🎥';
+        case 'pdf': return '📕';
+        case 'audio': return '🎵';
+        case 'archive': return '📦';
+        case 'code': return '💻';
+        default: return '📄';
+    }
 }
 
 function showNotification(msg) {
     const toast = document.createElement("div");
-    toast.style.position = "fixed";
-    toast.style.bottom = "20px";
-    toast.style.right = "20px";
-    toast.style.background = "linear-gradient(135deg, #00f2fe, #4facfe)";
-    toast.style.color = "#000";
-    toast.style.fontWeight = "bold";
-    toast.style.padding = "0.75rem 1.25rem";
-    toast.style.borderRadius = "8px";
-    toast.style.boxShadow = "0 5px 20px rgba(0,242,254,0.4)";
-    toast.style.zIndex = "9999";
+    toast.className = "toast-notification";
     toast.textContent = msg;
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 3000);
@@ -212,10 +289,10 @@ function escapeHtml(text) {
         '"': '&quot;',
         "'": '&#039;'
     };
-    return text.replace(/[&<>"']/g, m => map[m]);
+    return String(text).replace(/[&<>"']/g, m => map[m]);
 }
 
-// Initialize on page load
+// Initialize on DOM load
 document.addEventListener("DOMContentLoaded", () => {
     initWebSocket();
     loadFilesList();
